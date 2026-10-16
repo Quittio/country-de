@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Quittio\Country\DE;
 
 use Quittio\Core\Countries\AbstractCountryPack;
+use Quittio\Core\Countries\Capabilities\ProvidesReferenceRates;
 use Quittio\Core\Countries\CorrectionPolicy;
 use Quittio\Core\Countries\CountryDefaults;
 use Quittio\Core\Countries\DunningLaw;
@@ -15,6 +16,7 @@ use Quittio\Core\Countries\NumberingRules;
 use Quittio\Core\Countries\RetentionRule;
 use Quittio\Core\Data\InvoiceData;
 use Quittio\Core\Data\Note;
+use Quittio\Core\Dunning\ReferenceRates;
 use Quittio\Core\Enums\InvoiceTypeCode;
 use Quittio\Core\Enums\VatCategory;
 use Quittio\Core\I18n\Translations;
@@ -25,7 +27,9 @@ use Quittio\Core\Validation\ValidationResult;
 use Quittio\Core\View\MandatoryFieldGuard;
 use Quittio\Core\View\ViewModelFactory;
 use Quittio\Country\DE\Builder\GermanInvoiceMacros;
+use Quittio\Country\DE\Dunning\BaseRates;
 use Quittio\Country\DE\Formats\GermanFormatRule;
+use Quittio\Country\DE\Formats\XRechnungFormats;
 use Quittio\Country\DE\Layouts\Din5008;
 use Quittio\Country\DE\Profiles\XRechnung\XRechnung30;
 use Quittio\Country\DE\Profiles\XRechnung\XRechnung30Extension;
@@ -38,7 +42,7 @@ use Quittio\Country\DE\Texts\LegalTexts;
 /**
  * Country pack for Germany.
  */
-class CountryDE extends AbstractCountryPack
+class CountryDE extends AbstractCountryPack implements ProvidesReferenceRates
 {
     public const string CODE = 'DE';
 
@@ -69,7 +73,7 @@ class CountryDE extends AbstractCountryPack
             letterLayout: 'din5008b',
             profile: 'en16931',
             paymentQr: 'girocode',
-            vatPreset: VatPreset::Standard19->value,
+            vatPreset: VatPreset::Standard->value,
             smallBusinessVatPreset: VatPreset::SmallBusiness->value,
         );
     }
@@ -79,9 +83,27 @@ class CountryDE extends AbstractCountryPack
         return [new XRechnung30, new XRechnung30Extension];
     }
 
+    /**
+     * XRechnung in CII and UBL; "xrechnung" names the CII variant.
+     */
+    public function formats(): array
+    {
+        return XRechnungFormats::all();
+    }
+
+    public function formatAliases(): array
+    {
+        return [XRechnungFormats::ALIAS => XRechnungFormats::CII];
+    }
+
     public function taxPresets(): TaxPresetCollection
     {
-        return new TaxPresetCollection(VatPreset::cases());
+        $presets = array_filter(VatPreset::cases(), static fn (VatPreset $preset): bool => $preset->canonical() === $preset);
+
+        // Keys of earlier versions, e.g. in stored invoices or quittio.defaults.vat.
+        return (new TaxPresetCollection($presets))
+            ->alias('de.standard_19', VatPreset::Standard)
+            ->alias('de.reduced_7', VatPreset::Reduced);
     }
 
     /**
@@ -180,6 +202,15 @@ class CountryDE extends AbstractCountryPack
      */
     public function dunningLaw(): DunningLaw
     {
+        return self::germanDunningLaw();
+    }
+
+    /**
+     * The dunning law of section 288 BGB without an instance of the pack (whose constructor
+     * registers the builder macros).
+     */
+    public static function germanDunningLaw(): DunningLaw
+    {
         return new DunningLaw(
             b2bInterestPoints: '9.00',
             b2cInterestPoints: '5.00',
@@ -188,6 +219,14 @@ class CountryDE extends AbstractCountryPack
             consumerDefaultAfterDays: 30,
             referenceRateName: 'Basiszinssatz (§ 247 BGB)',
         );
+    }
+
+    /**
+     * The Basiszinssatz (section 247 BGB): the shipped rates plus those registered with BaseRates.
+     */
+    public function referenceRates(): ReferenceRates
+    {
+        return BaseRates::table();
     }
 
     /**
