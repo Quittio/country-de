@@ -97,12 +97,69 @@ return [
     'BR-DE-TMP-32' => [
         'message' => 'Die Rechnung soll das Liefer- oder Leistungsdatum enthalten: Lieferdatum (BT-72), Rechnungszeitraum (BG-14) oder einen Leistungszeitraum in jeder Position (BG-26).',
     ],
+    'BR-DEX-02' => [
+        'message' => 'Der Nettobetrag der Position :line (BT-131) soll der Summe der Nettobeträge ihrer direkten Unterpositionen (:expected) entsprechen.',
+    ],
+    'BR-DEX-04' => [
+        'message' => 'Das Kennungsschema „:value“ einer Partei ist weder in ISO/IEC 6523 noch eines der Schemata XR01 bis XR03 der XRechnung-Extension (SEPA nur für Verkäufer und Zahlungsempfänger in UBL).',
+    ],
+    'BR-DEX-05' => [
+        'message' => 'Das Schema „:value“ der Registrierungskennung ist weder in ISO/IEC 6523 noch eines der Schemata XR01 bis XR03 der XRechnung-Extension.',
+    ],
+    'BR-DEX-06' => [
+        'message' => 'Das Schema „:value“ der Artikelkennung (Standard Identifier) ist weder in ISO/IEC 6523 noch eines der Schemata XR01 bis XR03 der XRechnung-Extension.',
+    ],
+    'BR-DEX-07' => [
+        'message' => 'Das Schema „:value“ der elektronischen Adresse ist weder in der EAS-Codeliste noch eines der Schemata XR01 bis XR03 der XRechnung-Extension.',
+    ],
+    'BR-DEX-08' => [
+        'message' => 'Das Schema „:value“ der Kennung des Lieferorts ist weder in ISO/IEC 6523 noch eines der Schemata XR01 bis XR03 der XRechnung-Extension.',
+    ],
+    'BR-DEX-09' => [
+        'message' => 'Der Zahlbetrag (BT-115) muss dem Bruttobetrag (BT-112) abzüglich bereits gezahlter Beträge (BT-113) zuzüglich Rundungsbetrag (BT-114) und der Summe der Zahlungen an Dritte (BT-DEX-002) entsprechen.',
+    ],
+    'BR-DEX-10' => [
+        'message' => 'Die Art der Zahlung an Dritte (BT-DEX-001) muss für jede Zahlung an Dritte (BG-DEX-09) übermittelt werden.',
+    ],
+    'BR-DEX-12' => [
+        'message' => 'Die Beschreibung der Zahlung an Dritte (BT-DEX-003) muss für jede Zahlung an Dritte (BG-DEX-09) übermittelt werden.',
+    ],
+    'BR-DEX-13' => [
+        'message' => 'Der Betrag der Zahlung an Dritte (BT-DEX-002) darf höchstens zwei Nachkommastellen haben, angegeben ist :value.',
+    ],
+    'BR-DEX-14' => [
+        'message' => 'Der Betrag der Zahlung an Dritte (BT-DEX-002) ist in :value angegeben, muss aber in der Rechnungswährung (BT-5) :expected angegeben werden.',
+    ],
     'BR-DEX-15' => [
         'message' => 'Unterpositionen werden von XRechnung in CII nicht unterstützt. Verwenden Sie für die XRechnung-Extension die Syntax UBL.',
     ],
     'DE-XRECHNUNG-EXT-01' => [
         'message' => 'Die XRechnung-Extension kennt in UBL keine Gutschriftsanzeige (CreditNote). Stornieren Sie mit der Strategie negative_invoice (Rechnungsart 380 mit negativen Beträgen).',
         'hint' => 'Setzen Sie corrections.cancellation_strategy auf negative_invoice oder übergeben Sie die Strategie beim Storno.',
+    ],
+    'BR-DE-CVD-01' => [
+        'message' => 'Die Vertragsreferenz (BT-12) muss übermittelt werden.',
+        'hint' => 'Setzen Sie die Vertragsreferenz mit ->contractReference(…).',
+    ],
+    'BR-DE-CVD-02' => [
+        'message' => 'Die Vergabe- oder Losreferenz (BT-17) muss übermittelt werden.',
+        'hint' => 'Setzen Sie die Vergabe- oder Losreferenz mit ->tenderReference(…).',
+    ],
+    'BR-DE-CVD-03' => [
+        'message' => 'Mindestens eine Rechnungsposition (BG-25) muss eine Artikelklassifizierung (BT-158) mit der Kennung des Schemas CVD und ein Artikelmerkmal mit dem Namen cva (BT-160) enthalten.',
+        'hint' => 'Beschreiben Sie das Fahrzeug in seiner Position mit ->classification(\'M1\', \'CVD\') und ->attribute(\'cva\', \'clean\').',
+    ],
+    'BR-DE-CVD-04' => [
+        'message' => 'Die Artikelklassifizierung (BT-158) ":value" mit der Kennung des Schemas CVD muss eine der Fahrzeugklassen M1, M2, M3, N1, N2 oder N3 sein. Position :line.',
+    ],
+    'BR-DE-CVD-05' => [
+        'message' => 'Der Wert ":value" (BT-161) des Artikelmerkmals cva muss clean, zero-emission oder other sein. Position :line.',
+    ],
+    'BR-DE-CVD-06-a' => [
+        'message' => 'Eine Rechnungsposition mit einer Artikelklassifizierung (BT-158) mit der Kennung des Schemas CVD muss genau ein Artikelmerkmal mit dem Namen cva (BT-160) enthalten. Position :line.',
+    ],
+    'BR-DE-CVD-06-b' => [
+        'message' => 'Eine Rechnungsposition mit einem Artikelmerkmal mit dem Namen cva (BT-160) muss genau eine Artikelklassifizierung (BT-158) mit der Kennung des Schemas CVD enthalten. Position :line.',
     ],
     'DE-USTG-01' => [
         'message' => 'Die Anschrift :party ist unvollständig, es fehlt: :fields (§ 14 Abs. 4 Nr. 1 UStG).',
