@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Quittio\Country\DE;
 
 use Quittio\Core\Countries\AbstractCountryPack;
+use Quittio\Core\Countries\Capabilities\CompletesInvoices;
 use Quittio\Core\Countries\Capabilities\ProvidesReferenceRates;
 use Quittio\Core\Countries\CorrectionPolicy;
 use Quittio\Core\Countries\CountryDefaults;
@@ -18,6 +19,7 @@ use Quittio\Core\Data\InvoiceData;
 use Quittio\Core\Data\Note;
 use Quittio\Core\Dunning\ReferenceRates;
 use Quittio\Core\Enums\InvoiceTypeCode;
+use Quittio\Core\Enums\NoteSubjectCode;
 use Quittio\Core\Enums\VatCategory;
 use Quittio\Core\I18n\Translations;
 use Quittio\Core\Tax\TaxPresetCollection;
@@ -37,13 +39,14 @@ use Quittio\Country\DE\Profiles\XRechnung\XRechnung30Extension;
 use Quittio\Country\DE\Rules\BmfErrorClass;
 use Quittio\Country\DE\Rules\UstgRules;
 use Quittio\Country\DE\Support\Flags;
+use Quittio\Country\DE\Support\LeitwegId;
 use Quittio\Country\DE\Tax\VatPreset;
 use Quittio\Country\DE\Texts\LegalTexts;
 
 /**
  * Country pack for Germany.
  */
-class CountryDE extends AbstractCountryPack implements ProvidesReferenceRates
+class CountryDE extends AbstractCountryPack implements CompletesInvoices, ProvidesReferenceRates
 {
     public const string CODE = 'DE';
 
@@ -157,13 +160,14 @@ class CountryDE extends AbstractCountryPack implements ProvidesReferenceRates
         }
 
         $legalNotes = ViewModelFactory::legalNoteTexts($invoice);
+        $rowIndexes = ViewModelFactory::vatRowIndexes($invoice);
         foreach ($invoice->vatBreakdown as $index => $row) {
             if (! in_array($row->category, [VatCategory::ReverseCharge, VatCategory::IntraCommunitySupply], true)) {
                 continue;
             }
             // The exemption text (BT-120), or the VAT row that names reverse charge or the exemption.
             $note = $row->exemptionReason === null ? false : array_search($row->exemptionReason, $legalNotes, true);
-            $fields[] = new MandatoryField('vatRows['.$index.'].label'.($note === false ? '' : '|legalNotes['.$note.']'), 'Reverse charge or exemption note', '§ 14a UStG');
+            $fields[] = new MandatoryField('vatRows['.$rowIndexes[$index].'].label'.($note === false ? '' : '|legalNotes['.$note.']'), 'Reverse charge or exemption note', '§ 14a UStG');
         }
         $reverseCharge = Inspect::uses($invoice, VatCategory::ReverseCharge);
         $intraCommunity = Inspect::uses($invoice, VatCategory::IntraCommunitySupply);
@@ -198,6 +202,60 @@ class CountryDE extends AbstractCountryPack implements ProvidesReferenceRates
     }
 
     /**
+     * Invoices to consumers get the notice that the consumer is in default 30 days after the due
+     * date and receipt of the invoice (LegalTexts::CONSUMER_DEFAULT, subject PMT): without it the
+     * 30 days do not apply to consumers (section 286 (3) sentence 1 BGB). Not for credit notes,
+     * not twice, and not with the setting consumer_default_notice = false (quittio.countries.de).
+     */
+    public function complete(InvoiceData $invoice, array $settings): InvoiceData
+    {
+        if (($settings['omit_vat_ids_for_category_o'] ?? true) !== false && self::canOmitVatIds($invoice)) {
+            $invoice = $invoice->with([
+                'seller' => $invoice->seller->with(['vatId' => null]),
+                'buyer' => $invoice->buyer->with(['vatId' => null]),
+                'meta' => $invoice->meta->withFlag(Flags::VAT_IDS_OMITTED),
+            ]);
+        }
+        if (($settings['consumer_default_notice'] ?? true) === false || ! $invoice->buyer->isConsumer || $invoice->isCreditNote()) {
+            return $invoice;
+        }
+        $texts = array_values(LegalTexts::catalog()->texts[LegalTexts::CONSUMER_DEFAULT] ?? []);
+        foreach ($invoice->notes as $note) {
+            if (str_contains($note->content, '286') || in_array(trim($note->content), $texts, true)) {
+                return $invoice;
+            }
+        }
+
+        return $invoice->with(['notes' => [
+            ...$invoice->notes,
+            new Note(LegalTexts::text(LegalTexts::CONSUMER_DEFAULT, $invoice->meta->locale ?? LegalTexts::FALLBACK_LOCALE), NoteSubjectCode::PaymentInformation),
+        ]]);
+    }
+
+    /**
+     * Whether only supplies not subject to VAT (category O) are invoiced, so that EN 16931 forbids
+     * the VAT identifiers of seller and buyer (BR-O-02).
+     */
+    public static function onlyCategoryO(InvoiceData $invoice): bool
+    {
+        $lines = $invoice->allLines();
+
+        return $lines !== [] && array_filter($lines, static fn ($line): bool => $line->vat->category !== VatCategory::NotSubjectToVat) === [];
+    }
+
+    /**
+     * An invoice of category O only with a VAT identifier that complete() may leave out: the
+     * seller states its tax number instead (section 14 (4) sentence 1 no. 2 UStG), and there is no
+     * tax representative, whose VAT identifier EN 16931 requires (BR-56) and forbids (BR-O-02).
+     */
+    public static function canOmitVatIds(InvoiceData $invoice): bool
+    {
+        return self::onlyCategoryO($invoice) && $invoice->sellerTaxRepresentative === null
+            && Inspect::filled($invoice->seller->taxNumber)
+            && (Inspect::filled($invoice->seller->vatId) || Inspect::filled($invoice->buyer->vatId));
+    }
+
+    /**
      * Section 288 BGB: base rate plus 9 points (business) or 5 points (consumer),
      * flat rate of 40 EUR for business debtors, consumer default after 30 days with notice.
      */
@@ -216,7 +274,9 @@ class CountryDE extends AbstractCountryPack implements ProvidesReferenceRates
             b2bInterestPoints: '9.00',
             b2cInterestPoints: '5.00',
             b2bFlatRate: '40.00',
-            dayCount: 365,
+            // Actual/actual: 366 days in a leap year, as the statutory day count conventions do
+            // (annex to section 16 PAngV); 365 would overstate the interest of a leap year.
+            dayCount: null,
             consumerDefaultAfterDays: 30,
             referenceRateName: 'Basiszinssatz (§ 247 BGB)',
         );
@@ -231,8 +291,10 @@ class CountryDE extends AbstractCountryPack implements ProvidesReferenceRates
     }
 
     /**
-     * Cancellation by credit note, correction by cancel and reissue. To be confirmed with
-     * a tax adviser (legal review in the README).
+     * Cancellation by credit note, correction by cancel and reissue. A self-billed invoice sent
+     * as XRechnung (with a Leitweg-ID) is cancelled by a negative self-billed invoice (389): the
+     * self-billed credit note (261) is not among the type codes of XRechnung (warning BR-DE-17).
+     * Confirmed by a tax adviser in October 2026 (legal review in the README).
      */
     public function correctionPolicy(): CorrectionPolicy
     {
@@ -244,8 +306,14 @@ class CountryDE extends AbstractCountryPack implements ProvidesReferenceRates
                 // A cancellation of a self-billed invoice is issued by the buyer as well (section 14 (4) no. 10 UStG).
                 'cancellation_self_billed' => ['de' => 'Storno-Gutschrift', 'en' => 'Cancellation of the self-billed invoice (Storno-Gutschrift)'],
                 'correction' => ['de' => 'Rechnungskorrektur', 'en' => 'Corrected invoice'],
+                // Not "Rechnungskorrektur" nor "Gutschrift": the invoice stays correct (section 14.11 (4) UStAE).
+                'price_reduction' => ['de' => 'Entgeltminderung', 'en' => 'Price reduction'],
                 'self_billed' => ['de' => 'Gutschrift', 'en' => 'Self-billed invoice (Gutschrift)'],
             ],
+            strategyResolver: static fn (InvoiceData $original): ?string => $original->typeCode instanceof InvoiceTypeCode
+                && $original->typeCode->isSelfBilled() && ! $original->isCreditNote() && LeitwegId::isValid($original->buyerReference)
+                    ? CorrectionPolicy::CANCELLATION_NEGATIVE_INVOICE
+                    : null,
         );
     }
 

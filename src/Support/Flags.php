@@ -20,13 +20,46 @@ final class Flags
     /** Intra-community supply of a new vehicle (section 14a (4) UStG). */
     public const string NEW_VEHICLE = 'de.new_vehicle';
 
+    /**
+     * Prepayment invoice whose date of the service is not agreed yet (section 14.8 (4) sentence 5
+     * UStAE): no DE-USTG-03 warning.
+     */
+    public const string SERVICE_DATE_OPEN = 'de.service_date_open';
+
+    /**
+     * Prepayment invoice that names the expected date or month of the service in its note (set
+     * by advance(), section 14.8 (4) sentence 3 UStAE): no DE-USTG-03 warning.
+     */
+    public const string EXPECTED_SERVICE_DATE = 'de.expected_service_date';
+
+    /**
+     * deductAdvance() deducted an advance in full without the amount received being confirmed:
+     * DE-USTG-20 asks to confirm it.
+     */
+    public const string ADVANCE_RECEIPT_UNCONFIRMED = 'de.advance_receipt_unconfirmed';
+
+    /**
+     * A final invoice deducted an advance that was settled by self-billing (389), set by
+     * deductAdvance(): DE-USTG-19 notes the change of the way of invoicing.
+     */
+    public const string SELF_BILLED_ADVANCE = 'de.self_billed_advance';
+
+    /**
+     * The VAT identifiers of seller and buyer were left out of an invoice of category O only
+     * (BR-O-02), set by CountryDE::complete(): DE-CATEGORY-O-01 says so.
+     */
+    public const string VAT_IDS_OMITTED = 'de.vat_ids_omitted';
+
+    /** Ticket for the carriage of passengers (section 34 UStDV): no e-invoice obligation. */
+    public const string TICKET = 'de.ticket';
+
     /** The seller is a small business (section 19 UStG), e.g. from config quittio.seller.small_business. */
     public const string SMALL_BUSINESS = Meta::FLAG_SMALL_BUSINESS;
 
     /**
      * Gross limit of a small amount invoice in EUR.
      *
-     * @deprecated the limit depends on the issue date, use TaxTables::smallAmountLimitOn()
+     * @deprecated the limit depends on the supply date, use TaxTables::smallAmountLimitOn()
      */
     public const string SMALL_AMOUNT_LIMIT = '250.00';
 }

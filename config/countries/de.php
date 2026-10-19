@@ -29,4 +29,35 @@ return [
     'base_rates' => [],
     'base_rate_file' => storage_path('app/quittio/base-rates.json'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Default notice for consumers (§ 286 Abs. 3 BGB)
+    |--------------------------------------------------------------------------
+    | Invoices to consumers get the notice that the consumer is in default 30
+    | days after the due date and receipt of the invoice. Without it the 30 days
+    | do not apply to consumers. false = add the notice yourself
+    | (->de()->consumerDefaultNotice()).
+    */
+    'consumer_default_notice' => true,
+
+    /*
+    |--------------------------------------------------------------------------
+    | E-invoice obligation in 2027 (§ 27 Abs. 38 UStG)
+    |--------------------------------------------------------------------------
+    | true when your total turnover of the previous year was above 800,000 EUR:
+    | domestic business invoices for supplies of 2027 must then be e-invoices
+    | (DE-EINVOICE-01). From 2028 they must be for everybody.
+    */
+    'prior_year_turnover_above_800k' => false,
+
+    /*
+    |--------------------------------------------------------------------------
+    | VAT identifiers on invoices not subject to VAT (category O)
+    |--------------------------------------------------------------------------
+    | EN 16931 allows no VAT identifiers on such invoices (BR-O-02), e.g. for
+    | the transfer of a business as a whole. true = leave out the VAT identifiers
+    | of seller and buyer when the seller's tax number is given.
+    */
+    'omit_vat_ids_for_category_o' => true,
+
 ];

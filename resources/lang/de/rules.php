@@ -180,11 +180,11 @@ return [
     ],
     'DE-USTG-03' => [
         'message' => 'Der Zeitpunkt der Lieferung oder Leistung muss angegeben sein: Lieferdatum (BT-72), Abrechnungszeitraum (BG-14) oder Leistungszeiträume aller Positionen (BG-26) (§ 14 Abs. 4 Nr. 6 UStG).',
-        'hint' => 'Setzen Sie ->deliveryDate() – auch wenn es dem Rechnungsdatum entspricht – oder ->invoicingPeriod().',
+        'hint' => 'Setzen Sie ->deliveryDate() – auch wenn es dem Rechnungsdatum entspricht – oder ->invoicingPeriod(). Eine Anzahlungsrechnung (386) nennt den voraussichtlichen Zeitpunkt oder Monat; ist er noch nicht vereinbart, verwenden Sie ->de()->serviceDateOpen().',
     ],
     'DE-USTG-04' => [
         'message' => 'Eine Gutschrift im Sinne des UStG muss die Angabe „Gutschrift“ enthalten (§ 14 Abs. 4 Nr. 10 UStG).',
-        'hint' => 'Verwenden Sie ->de()->selfBilled(); der Builder ergänzt den Hinweis.',
+        'hint' => 'Verwenden Sie ->de()->selfBilled(); der Builder ergänzt den Hinweis. In einer E-Rechnung genügt der Rechnungstyp als Kennzeichnung (Abschnitt 14.5 Abs. 24 UStAE), dort ist es nur eine Warnung.',
     ],
     'DE-USTG-05' => [
         'message' => 'Bei Leistungen im Zusammenhang mit einem Grundstück an Nichtunternehmer ist der Hinweis auf die Aufbewahrungspflicht des Empfängers Pflicht (§ 14 Abs. 4 Nr. 9 UStG).',
@@ -192,7 +192,7 @@ return [
     ],
     'DE-USTG-06' => [
         'message' => 'Rechnungen mit Steuerschuldnerschaft des Leistungsempfängers müssen die Angabe „Steuerschuldnerschaft des Leistungsempfängers“ enthalten (§ 14a Abs. 1 und 5 UStG).',
-        'hint' => 'Verwenden Sie die Presets VatPreset::ReverseChargeDomestic, VatPreset::ReverseChargeEu oder VatPreset::TriangularTransaction; ihre Texte werden in jeder Sprache des Länderpakets akzeptiert.',
+        'hint' => 'Verwenden Sie die Presets VatPreset::ReverseChargeDomestic, VatPreset::ReverseChargeEu oder VatPreset::TriangularTransaction; ihre Texte werden in jeder Sprache des Länderpakets akzeptiert. Ohne die Angabe ist die Rechnung nicht ordnungsgemäß; die Steuerschuld des Empfängers bleibt davon unberührt.',
     ],
     'DE-USTG-07' => [
         'message' => 'Bei der innergemeinschaftlichen Lieferung neuer Fahrzeuge müssen die Fahrzeugmerkmale (BG-32) bei jeder Position angegeben sein (§ 14a Abs. 4 UStG).',
@@ -212,7 +212,7 @@ return [
     ],
     'DE-USTG-11' => [
         'message' => 'Bei Reverse-Charge-Leistungen in einem anderen EU-Mitgliedstaat und bei innergemeinschaftlichen Dreiecksgeschäften müssen die USt-IdNr. des Verkäufers (BT-31) und des Käufers (BT-48) angegeben werden (§ 14a Abs. 1 und 7 UStG).',
-        'hint' => 'Ergänzen Sie ->vatId(…) bei Verkäufer und Käufer; die Steuernummer genügt hier nicht.',
+        'hint' => 'Ergänzen Sie ->vatId(…) bei Verkäufer und Käufer; die Steuernummer genügt hier nicht. Ein Kleinunternehmer (§ 19 UStG) braucht keine eigene USt-IdNr.',
     ],
     'DE-USTG-12' => [
         'message' => 'Die Erleichterungen für Kleinbetragsrechnungen gelten nicht für Fernverkäufe, innergemeinschaftliche Lieferungen und Leistungen mit Steuerschuldnerschaft des Leistungsempfängers (§ 33 Satz 3 UStDV).',
@@ -229,6 +229,42 @@ return [
     'DE-USTG-15' => [
         'message' => 'Rechnungen über innergemeinschaftliche Lieferungen und über sonstige Leistungen nach § 3a Abs. 2 UStG in einem anderen Mitgliedstaat sind bis zum 15. Tag des Folgemonats auszustellen (§ 14a Abs. 1 Satz 2 und Abs. 3 Satz 1 UStG); die Frist endete am :deadline.',
         'hint' => 'Prüfen Sie Rechnungsdatum (BT-2) und Leistungsdatum. Die Rechnung bleibt gültig, wird aber verspätet ausgestellt.',
+    ],
+    'DE-USTG-16' => [
+        'message' => 'Die Rechnung wird mehr als sechs Monate nach der Leistung (:supply) ausgestellt; Rechnungen an Unternehmer und über Leistungen im Zusammenhang mit einem Grundstück sind innerhalb von sechs Monaten auszustellen (§ 14 Abs. 2 Satz 2 UStG).',
+        'hint' => 'Prüfen Sie Rechnungsdatum (BT-2) und Leistungsdatum. Die Rechnung bleibt gültig, wird aber verspätet ausgestellt.',
+    ],
+    'DE-USTG-17' => [
+        'message' => 'Eine Anzahlungsrechnung mit bereits gezahltem Betrag (BT-113) muss den Tag der Vereinnahmung als Steuerzeitpunkt (BT-7) angeben, wenn er vom Rechnungsdatum abweicht (§ 14 Abs. 4 Satz 1 Nr. 6 UStG).',
+        'hint' => 'Setzen Sie ->taxPointDate($vereinnahmtAm). Ging die Zahlung am Rechnungsdatum ein, fehlt nichts.',
+    ],
+    'DE-USTG-18' => [
+        'message' => 'Eine korrigierte Rechnung (384) soll in einer Notiz angeben, dass sie die ursprüngliche Rechnung berichtigt und ersetzt (§ 31 Abs. 5 UStDV, Abschnitt 15.2a Abs. 7 UStAE).',
+        'hint' => 'Verwenden Sie Quittio::correction(); es ergänzt den Hinweis „Diese Rechnung berichtigt und ersetzt die Rechnung … vom …“, oder ergänzen Sie einen solchen Hinweis.',
+    ],
+    'DE-USTG-19' => [
+        'message' => 'Die Schlussrechnung zieht eine per Gutschrift abgerechnete Anzahlung ab, ist selbst aber keine Gutschrift. Die Anzahlung muss abgezogen werden (§ 14 Abs. 2 Satz 5 UStG); ein Wechsel des Abrechnungswegs ist zulässig, aber ungewöhnlich.',
+        'hint' => 'Klären Sie mit dem Leistungsempfänger, wie die Schlusszahlung abgerechnet wird. Rechnet er weiter per Gutschrift ab, stellt er auch das Schlussdokument aus.',
+    ],
+    'DE-USTG-20' => [
+        'message' => 'Die Schlussrechnung zieht eine Anzahlungsrechnung vollständig ab, ohne dass der vereinnahmte Betrag bestätigt ist. Abzuziehen sind nur tatsächlich vereinnahmte Anzahlungen (§ 14 Abs. 5 Satz 2 UStG, Abschnitt 14.8 Abs. 2, 5 und 10 UStAE).',
+        'hint' => 'Geben Sie den vereinnahmten Betrag an: ->de()->deductAdvance($anzahlung, received: \'500.00\') für einen Teil, received: GermanInvoice::RECEIVED_IN_FULL für die ganze Anzahlung. Eine nicht bezahlte Anzahlung ziehen Sie nicht ab.',
+    ],
+    'DE-CATEGORY-O-01' => [
+        'message' => 'Die USt-IdNr. von Verkäufer und Käufer wurden weggelassen: EN 16931 erlaubt bei nicht steuerbaren Umsätzen keine (BR-O-02); angegeben ist die Steuernummer des Verkäufers (BT-32, § 14 Abs. 4 Satz 1 Nr. 2 UStG).',
+        'hint' => 'Nichts zu tun. Abschalten mit quittio.countries.de.omit_vat_ids_for_category_o = false.',
+    ],
+    'DE-CATEGORY-O-02' => [
+        'message' => 'Eine Rechnung über nicht steuerbare Umsätze (Kategorie O) darf keine USt-IdNr. enthalten (BR-O-02). Quittio lässt sie weg, wenn die Steuernummer des Verkäufers (BT-32) angegeben ist und es keinen Steuervertreter gibt.',
+        'hint' => 'Hinterlegen Sie die Steuernummer des Verkäufers (quittio.seller.tax_number oder ->taxNumber()). Mit Steuervertreter lässt sich eine Rechnung der Kategorie O nach EN 16931 nicht ausstellen (BR-56).',
+    ],
+    'DE-EINVOICE-01' => [
+        'message' => 'Die Rechnung muss als E-Rechnung ausgestellt werden: :reason (§ 14 Abs. 1 und § 27 Abs. 38 UStG). Ein PDF, MINIMUM oder BASIC WL ist eine „sonstige Rechnung“.',
+        'hint' => 'Erzeugen Sie zugferd (EN 16931) oder xrechnung. Für 2027 gibt quittio.countries.de.prior_year_turnover_above_800k an, ob die Übergangsregel für Sie gilt. Eine sonstige Rechnung statt einer E-Rechnung ist keine Ordnungswidrigkeit (BMF-Schreiben vom 15.10.2026, Rn. 28), der Empfänger kann aber den Vorsteuerabzug verlieren.',
+    ],
+    'DE-EINVOICE-02' => [
+        'message' => 'Bis :until ist für diesen Umsatz statt einer E-Rechnung eine „sonstige Rechnung“ zulässig, als PDF nur mit Zustimmung des Empfängers (§ 27 Abs. 38 UStG, § 14 Abs. 1 Satz 5 UStG).',
+        'hint' => 'Stellen Sie sicher, dass der Empfänger einer PDF-Rechnung zustimmt, oder erzeugen Sie eine E-Rechnung (zugferd, xrechnung).',
     ],
     'DE-LEITWEG-ID' => [
         'message' => 'Die Prüfziffer der Leitweg-ID „:value“ (BT-10) ist falsch.',

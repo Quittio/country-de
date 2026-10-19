@@ -180,11 +180,11 @@ return [
     ],
     'DE-USTG-03' => [
         'message' => 'The date of the supply or service must be stated: delivery date (BT-72), invoicing period (BG-14) or periods on all lines (BG-26) (section 14 (4) no. 6 UStG).',
-        'hint' => 'Set ->deliveryDate(), even if it equals the invoice date, or ->invoicingPeriod().',
+        'hint' => 'Set ->deliveryDate(), even if it equals the invoice date, or ->invoicingPeriod(). A prepayment invoice (386) names the expected date or month; if it is not agreed yet, use ->de()->serviceDateOpen().',
     ],
     'DE-USTG-04' => [
         'message' => 'A self-billed invoice must be labelled "Gutschrift" (section 14 (4) no. 10 UStG).',
-        'hint' => 'Use ->de()->selfBilled(); the builder adds the note.',
+        'hint' => 'Use ->de()->selfBilled(); the builder adds the note. In an e-invoice the type code is label enough (section 14.5 (24) UStAE), so only a warning there.',
     ],
     'DE-USTG-05' => [
         'message' => 'Services in connection with a property to a non-business buyer require the notice on the buyer\'s retention obligation (section 14 (4) no. 9 UStG).',
@@ -192,7 +192,7 @@ return [
     ],
     'DE-USTG-06' => [
         'message' => 'Reverse charge invoices must state "Steuerschuldnerschaft des Leistungsempfängers" (section 14a (1) and (5) UStG).',
-        'hint' => 'Use the presets VatPreset::ReverseChargeDomestic, VatPreset::ReverseChargeEu or VatPreset::TriangularTransaction; their texts are accepted in every language of the country pack.',
+        'hint' => 'Use the presets VatPreset::ReverseChargeDomestic, VatPreset::ReverseChargeEu or VatPreset::TriangularTransaction; their texts are accepted in every language of the country pack. Without the statement the invoice is incomplete; the buyer still owes the VAT.',
     ],
     'DE-USTG-07' => [
         'message' => 'The intra-community supply of a new vehicle requires the vehicle details (BG-32) on every line (section 14a (4) UStG).',
@@ -212,7 +212,7 @@ return [
     ],
     'DE-USTG-11' => [
         'message' => 'Reverse charge services in another EU member state and intra-community triangular transactions must state the VAT identifiers of the seller (BT-31) and the buyer (BT-48) (section 14a (1) and (7) UStG).',
-        'hint' => 'Add ->vatId(…) for seller and buyer; the tax number is not sufficient here.',
+        'hint' => 'Add ->vatId(…) for seller and buyer; the tax number is not sufficient here. A small business (section 19 UStG) needs no VAT identifier of its own.',
     ],
     'DE-USTG-12' => [
         'message' => 'The simplifications for small amount invoices do not apply to distance sales, intra-community supplies and reverse charge supplies (section 33 sentence 3 UStDV).',
@@ -229,6 +229,42 @@ return [
     'DE-USTG-15' => [
         'message' => 'Invoices for intra-community supplies and for services under section 3a (2) UStG in another member state must be issued by the 15th day of the month following the supply (section 14a (1) sentence 2 and (3) sentence 1 UStG); the deadline was :deadline.',
         'hint' => 'Check the invoice date (BT-2) and the date of supply. The invoice stays valid, but it is issued late.',
+    ],
+    'DE-USTG-16' => [
+        'message' => 'The invoice is issued more than six months after the supply (:supply); invoices to businesses and for services in connection with a property must be issued within six months (section 14 (2) sentence 2 UStG).',
+        'hint' => 'Check the invoice date (BT-2) and the date of supply. The invoice stays valid, but it is issued late.',
+    ],
+    'DE-USTG-17' => [
+        'message' => 'A prepayment invoice that states an amount already paid (BT-113) must state the date the payment was received as VAT point date (BT-7) if it differs from the issue date (section 14 (4) sentence 1 no. 6 UStG).',
+        'hint' => 'Set ->taxPointDate($received). If the payment was received on the invoice date, nothing is missing.',
+    ],
+    'DE-USTG-18' => [
+        'message' => 'A corrected invoice (384) should state in a note that it corrects and replaces the original invoice (section 31 (5) UStDV, section 15.2a (7) UStAE).',
+        'hint' => 'Use Quittio::correction(), which adds the note "Diese Rechnung berichtigt und ersetzt die Rechnung … vom …", or add such a note.',
+    ],
+    'DE-USTG-19' => [
+        'message' => 'The final invoice deducts an advance that was settled by self-billing (Gutschrift), but is no self-billed invoice itself. The advance must be deducted (section 14 (2) sentence 5 UStG); changing the way of invoicing is allowed but unusual.',
+        'hint' => 'Check with the buyer how the final payment is settled. If the buyer settles it by self-billing as well, the buyer issues the final document.',
+    ],
+    'DE-USTG-20' => [
+        'message' => 'The final invoice deducts an advance invoice in full without the amount received being confirmed. Only advance payments actually received are deducted (section 14 (5) sentence 2 UStG, section 14.8 (2), (5) and (10) UStAE).',
+        'hint' => 'Pass the amount received: ->de()->deductAdvance($advance, received: \'500.00\') for a part, received: GermanInvoice::RECEIVED_IN_FULL for the whole advance. Do not deduct an advance that was not paid.',
+    ],
+    'DE-CATEGORY-O-01' => [
+        'message' => 'The VAT identifiers of seller and buyer were left out: EN 16931 allows none on an invoice of supplies not subject to VAT (BR-O-02); the seller\'s tax number (BT-32) is stated instead (section 14 (4) sentence 1 no. 2 UStG).',
+        'hint' => 'Nothing to do. Switch it off with quittio.countries.de.omit_vat_ids_for_category_o = false.',
+    ],
+    'DE-CATEGORY-O-02' => [
+        'message' => 'An invoice of supplies not subject to VAT (category O) must not state VAT identifiers (BR-O-02). Quittio leaves them out when the seller\'s tax number (BT-32) is given and there is no tax representative.',
+        'hint' => 'Set the seller\'s tax number (quittio.seller.tax_number or ->taxNumber()). With a tax representative an invoice of category O cannot be issued according to EN 16931 (BR-56).',
+    ],
+    'DE-EINVOICE-01' => [
+        'message' => 'The invoice must be issued as e-invoice: :reason (section 14 (1) and section 27 (38) UStG). A PDF, MINIMUM or BASIC WL is an "other invoice".',
+        'hint' => 'Render it as zugferd (EN 16931) or xrechnung. For 2027, quittio.countries.de.prior_year_turnover_above_800k tells whether the transition applies to you. An "other invoice" instead of an e-invoice is no administrative offence (BMF letter of 15 October 2026, marginal no. 28), but the buyer may lose the input tax deduction.',
+    ],
+    'DE-EINVOICE-02' => [
+        'message' => 'Until :until an "other invoice" is allowed for this supply instead of an e-invoice, as PDF only with the consent of the buyer (section 27 (38) UStG, section 14 (1) sentence 5 UStG).',
+        'hint' => 'Make sure the buyer agrees to a PDF invoice, or render an e-invoice (zugferd, xrechnung).',
     ],
     'DE-LEITWEG-ID' => [
         'message' => 'The check digits of the Leitweg-ID ":value" (BT-10) are wrong.',
